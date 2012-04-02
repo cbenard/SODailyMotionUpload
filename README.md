@@ -1,0 +1,3 @@
+This is to answer [this StackOverflow question](http://stackoverflow.com/questions/9969219/how-to-upload-video-on-dailymotion-with-c-sharp-is-somebody-has-a-complete-co) on how to upload to DailyMotion.
+
+I used information available explaining how to do their [OAuth Authentication](http://www.dailymotion.com/doc/api/authentication.html) and [Video Publishing](http://www.dailymotion.com/doc/api/getting-started.html#publishing-videos).
