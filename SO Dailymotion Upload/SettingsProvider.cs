@@ -24,6 +24,22 @@ namespace SO_Dailymotion_Upload
             }
         }
 
+        public static string Username
+        {
+            get
+            {
+                return GetXmlElementValue("username");
+            }
+        }
+
+        public static string Password
+        {
+            get
+            {
+                return GetXmlElementValue("password");
+            }
+        }
+
         private static string GetXmlElementValue(string elementName)
         {
             return XDocument.Load("secrets.xml").Element("root").Element(elementName).Value;
