@@ -6,6 +6,7 @@ using System.Net;
 using System.Web;
 using System.IO;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace SO_Dailymotion_Upload
 {
@@ -15,10 +16,41 @@ namespace SO_Dailymotion_Upload
         {
             var accessToken = GetAccessToken();
 
-            Console.WriteLine(accessToken);
+            Console.WriteLine("Access token is " + accessToken);
+
+            var fileToUpload = @"C:\Program Files\Common Files\Microsoft Shared\ink\en-US\join.avi";
+
+            Console.WriteLine("File to upload is " + fileToUpload);
+
+            var uploadUrl = GetFileUploadUrl(accessToken);
+
+            Console.WriteLine("Posting to " + uploadUrl);
+
+            var response = UploadFileCompletedEventArgs(fileToUpload, accessToken, uploadUrl);
+
+            Console.WriteLine("Response:\n");
+
+            Console.WriteLine(response + "\n");
+
+            Console.WriteLine("Done. Press enter to exit.");
+            Console.ReadLine();
         }
 
-        private static object GetAccessToken()
+        private static UploadResponse UploadFileCompletedEventArgs(string fileToUpload, string accessToken, string uploadUrl)
+        {
+            var client = new WebClient();
+            client.Headers.Add("Authorization", "OAuth " + accessToken);
+
+            var responseBytes = client.UploadFile(uploadUrl, fileToUpload);
+
+            var responseString = Encoding.UTF8.GetString(responseBytes);
+
+            var response = JsonConvert.DeserializeObject<UploadResponse>(responseString);
+
+            return response;
+        }
+
+        private static string GetAccessToken()
         {
             var request = WebRequest.Create("https://api.dailymotion.com/oauth/token");
             request.Method = "POST";
@@ -48,6 +80,18 @@ namespace SO_Dailymotion_Upload
             var oauthResponse = JsonConvert.DeserializeObject<OAuthResponse>(responseString);
 
             return oauthResponse.access_token;
+        }
+
+        private static string GetFileUploadUrl(string accessToken)
+        {
+            var client = new WebClient();
+            client.Headers.Add("Authorization", "OAuth " + accessToken);
+
+            var urlResponse = client.DownloadString("https://api.dailymotion.com/file/upload");
+
+            var response = JsonConvert.DeserializeObject<UploadRequestResponse>(urlResponse).upload_url;
+
+            return response;
         }
     }
 }
