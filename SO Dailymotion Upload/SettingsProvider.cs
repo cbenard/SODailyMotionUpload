@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
+using System.IO;
 
 namespace SO_Dailymotion_Upload
 {
@@ -42,6 +43,11 @@ namespace SO_Dailymotion_Upload
 
         private static string GetXmlElementValue(string elementName)
         {
+            if (!File.Exists("secrets.xml"))
+            {
+                throw new Exception("Rename secrets.xml.sample to secrets.xml and enter your secrets in the file.");
+            }
+
             return XDocument.Load("secrets.xml").Element("root").Element(elementName).Value;
         }
     }
