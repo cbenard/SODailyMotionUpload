@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net;
-using System.Web;
-using System.IO;
-using Newtonsoft.Json;
 using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Text;
+using System.Web;
+using Newtonsoft.Json;
 
 namespace SO_Dailymotion_Upload
 {
@@ -15,6 +13,7 @@ namespace SO_Dailymotion_Upload
         static void Main(string[] args)
         {
             var accessToken = GetAccessToken();
+            Authorize(accessToken);
 
             Console.WriteLine("Access token is " + accessToken);
 
@@ -26,17 +25,22 @@ namespace SO_Dailymotion_Upload
 
             Console.WriteLine("Posting to " + uploadUrl);
 
-            var response = UploadFileCompletedEventArgs(fileToUpload, accessToken, uploadUrl);
+            var response = GetFileUploadResponse(fileToUpload, accessToken, uploadUrl);
 
             Console.WriteLine("Response:\n");
 
             Console.WriteLine(response + "\n");
 
+            Console.WriteLine("Publishing video.\n");
+            var uploadedResponse = PublishVideo(response, accessToken);
+
+            Console.WriteLine(uploadedResponse);
+
             Console.WriteLine("Done. Press enter to exit.");
             Console.ReadLine();
         }
 
-        private static UploadResponse UploadFileCompletedEventArgs(string fileToUpload, string accessToken, string uploadUrl)
+        private static UploadResponse GetFileUploadResponse(string fileToUpload, string accessToken, string uploadUrl)
         {
             var client = new WebClient();
             client.Headers.Add("Authorization", "OAuth " + accessToken);
@@ -48,6 +52,38 @@ namespace SO_Dailymotion_Upload
             var response = JsonConvert.DeserializeObject<UploadResponse>(responseString);
 
             return response;
+        }
+
+        private static UploadedResponse PublishVideo(UploadResponse uploadResponse, string accessToken)
+        {
+            var request = WebRequest.Create("https://api.dailymotion.com/me/videos?url=" + HttpUtility.UrlEncode(uploadResponse.url));
+            request.Method = "POST";
+            request.ContentType = "application/x-www-form-urlencoded";
+            request.Headers.Add("Authorization", "OAuth " + accessToken);
+
+            var requestString = String.Format("title={0}&tags={1}&channel={2}&published={3}",
+                HttpUtility.UrlEncode("some title"),
+                HttpUtility.UrlEncode("tag1"),
+                HttpUtility.UrlEncode("news"),
+                HttpUtility.UrlEncode("true"));
+
+            var requestBytes = Encoding.UTF8.GetBytes(requestString);
+
+            var requestStream = request.GetRequestStream();
+
+            requestStream.Write(requestBytes, 0, requestBytes.Length);
+
+            var response = request.GetResponse();
+
+            var responseStream = response.GetResponseStream();
+            string responseString;
+            using (var reader = new StreamReader(responseStream))
+            {
+                responseString = reader.ReadToEnd();
+            }
+
+            var uploadedResponse = JsonConvert.DeserializeObject<UploadedResponse>(responseString);
+            return uploadedResponse;
         }
 
         private static string GetAccessToken()
@@ -80,6 +116,24 @@ namespace SO_Dailymotion_Upload
             var oauthResponse = JsonConvert.DeserializeObject<OAuthResponse>(responseString);
 
             return oauthResponse.access_token;
+        }
+
+        private static void Authorize(string accessToken)
+        {
+            var authorizeUrl = String.Format("https://api.dailymotion.com/oauth/authorize?response_type=code&client_id={0}&scope=read+write+manage_videos+delete&redirect_uri={1}",
+                HttpUtility.UrlEncode(SettingsProvider.Key),
+                HttpUtility.UrlEncode(SettingsProvider.CallbackUrl));
+
+            Console.WriteLine("We need permissions to upload. Press enter to open web browser.");
+            Console.ReadLine();
+
+            Process.Start(authorizeUrl);
+
+            var client = new WebClient();
+            client.Headers.Add("Authorization", "OAuth " + accessToken);
+
+            Console.WriteLine("Press enter once you have authenticated and been redirected to your callback URL");
+            Console.ReadLine();
         }
 
         private static string GetFileUploadUrl(string accessToken)

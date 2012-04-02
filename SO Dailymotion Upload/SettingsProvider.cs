@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml.Linq;
 using System.IO;
+using System.Xml.Linq;
 
 namespace SO_Dailymotion_Upload
 {
@@ -38,6 +35,14 @@ namespace SO_Dailymotion_Upload
             get
             {
                 return GetXmlElementValue("password");
+            }
+        }
+
+        public static string CallbackUrl
+        {
+            get
+            {
+                return GetXmlElementValue("callbackurl");
             }
         }
 
